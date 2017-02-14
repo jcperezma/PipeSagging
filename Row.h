@@ -20,6 +20,7 @@ public:
 	virtual void removeColumns(vector<int> & colIDs, vector<int> & idMap)=0;
 	virtual void removeColumn(int colId)=0;
 	virtual int const getSize()const =0;
+	virtual void setToZero() =0;
 protected:
 };
 
@@ -41,7 +42,12 @@ public:
 		return *this;
 	};
 
-
+	void setToZero()override{
+		for (int i = 0; i < rowData.size(); i++)
+		{
+			rowData[i] =0;
+		}
+};
 	vector<T> const & getRowData(){
 		return rowData;
 	};
@@ -187,6 +193,9 @@ public:
 	void setColumn(int newCol){
 		column = newCol;
 	}
+	void setValue(T newVal){
+		value = newVal;
+	}
 };
 
 
@@ -278,6 +287,12 @@ const Sparserow<T>& operator=( Sparserow<T>&e){
 		return *this;
 	} // assignment operator
 	*/
+void setToZero()override{
+	for ( auto & e:rowData)
+	{
+		e.setValue(0);
+	}
+};
 T&  operator[](int i) override{
 for ( auto it =rowData.begin(); it !=rowData.end(); ++it)
 	{
@@ -289,8 +304,8 @@ for ( auto it =rowData.begin(); it !=rowData.end(); ++it)
 	}
 // didn't find column
 
-	T result =0;
-	return result;
+	
+	return T(0);
 }
 
 void rowPlus(row<T> & B, row<T> &result) override{

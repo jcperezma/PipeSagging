@@ -267,6 +267,13 @@ public:
 		
 	};
 
+	void setToZero(){
+		for (int i = 0; i < matrixData.size(); i++)
+		{
+			matrixData[i].setToZero();
+		}
+	};
+
 	void removeZeros(){
 		for (int i = 0; i < nRows; i++)
 		{
@@ -327,7 +334,7 @@ public:
 		int indexCount=1;
 		for (int i = 0; i < getnRows(); i++)
 		{
-			if (i==BC_ID[count])
+			if (count < BC_ID.size() &&  i==BC_ID[count])
 			{
 				
 				count++; // get next BC_ID
@@ -741,12 +748,12 @@ template <typename T>
 
 	// Conjugate Gradient
 	template <typename T >
-vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b){
+vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b, vector<T> & initGuess){
 	// uses conjugate gradient method 
-	T tol = 0.03;
+	T tol = 0.1;
 	// initialize guess
-	vector<T> x;
-	for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);
+	vector<T> x =initGuess;
+	//for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);
 
 	// vector of residuals
 	vector<T> r =b - (A*x); //r = b - A * x;
