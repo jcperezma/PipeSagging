@@ -13,12 +13,18 @@ class ThermalFluidMesh {
 
 public:
 	virtual void initializeFromFile(const string & fileName);
-	virtual void assembleGlobalStifMatrix(physType const & type);
-	virtual void assembleGlobalStifandMassMatrix(physType const & type);
+	virtual void assembleGlobalStifMatrix(physType const & type, bool computeM);
 	virtual void assembleTemporalMatrices(physType const & type);
 	virtual void findDisplacements(physType const & type);
-	virtual void printDisplacements();
+	virtual void advanceMesh();
+
+	// output operations
+	virtual void prindPVDDataset (ofstream &out, int step, string filename );
+	virtual void printPVDfileHeading(ofstream &out);
+	virtual void printPVDfileFooter(ofstream & out);
 	virtual void printVTUfile(string fileName);
+	virtual void printDisplacements();
+
 protected:
 	vector<unique_ptr<FiniteElement>> elements;
 	vector<Point2D> coords;
@@ -28,6 +34,6 @@ protected:
 
 	// Arrays for Temperature
 	FE_data thermalData;
-	FE_data_trans thermalData_trans;
+
 
 };
