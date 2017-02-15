@@ -798,8 +798,8 @@ void ThermalFluidMesh::initializeFromFile(const string & fileName){
 	
 
 	// for the thermal variables
-	thermalData_trans.dim=1;
-	initGlobals(thermalData_trans, elements, coords.size() );
+	//thermalData_trans.dim=1;
+	//initGlobals(thermalData_trans, elements, coords.size() );
 	
 
 }

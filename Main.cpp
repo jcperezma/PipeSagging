@@ -25,7 +25,7 @@ int main() {
 	
 	
 	ThermalFluidMesh FE2DMesh;
-	FE2DMesh.initializeFromFile("BottomFreeBoundary10x10.txt");
+	FE2DMesh.initializeFromFile("result10x10.txt");
 
 	clock_t timer_start =clock();
 
@@ -36,7 +36,7 @@ int main() {
 	//FE2DMesh.findDisplacements(THERMAL);
 
 	clock_t timer_end =clock();
-	FE2DMesh.printVTUfile("results.vtu");
+	FE2DMesh.printVTUfile("results2.vtu");
 	
 	double elapsed_secs = double(timer_end - timer_start) / CLOCKS_PER_SEC;
 	

@@ -743,7 +743,7 @@ template <typename T>
 	template <typename T >
 vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b){
 	// uses conjugate gradient method 
-	T tol = 0.03;
+	T tol = 0.3;
 	// initialize guess
 	vector<T> x;
 	for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);
