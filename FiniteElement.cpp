@@ -1,6 +1,29 @@
 #include "FiniteElement.h"
 
+double computeVisc(double const & T, double const & zero_shear_mu, double const & alpha){
+	double visc =0.0;
 
+	if(T >120 ){
+		visc= zero_shear_mu * exp(alpha/T  );
+		return visc;
+	}
+
+	if(T<=120 && T >100){
+		double x2 = 120;
+		double y2 = zero_shear_mu * exp(alpha/120  );	// I could pre compute this
+		double x1 = 100;
+		double y1 = y2*100;
+		double m = (y2-y1)/(x2-x1);
+		double b = y1 - m * x1;
+		visc = m * T +b;
+		return visc;
+	}
+	if(T<= 100){
+		visc = zero_shear_mu * exp(alpha/120  )*100;
+	}
+
+	return visc;
+}
 
 void BiLinearQuadThermalFluid::computeShapeFunctions(double const & xi, double const & eta, vector<Point2D> const & coords, dMatrix2D<double> & B, vector<double>& Ni, double & detJ){
 	// computes shape functions and derivatives of shpae functions evaluated and xi and eta. 
@@ -147,8 +170,8 @@ void BiLinearQuadThermalFluid::computeFluidKandM(vector<Point2D> const & coords,
 	double detJ;
 
 	// external parameters, I duplicate the values here to not make the code below more verbose.
-	double mu = params.mu;
-	double lambda = params.lambda;
+	//double mu = params.mu;
+
 	double rho =params.rho;
 	double g_y =params.g_y;
 
@@ -167,6 +190,12 @@ void BiLinearQuadThermalFluid::computeFluidKandM(vector<Point2D> const & coords,
 			// find shape functions and derivatives at xi and eta
 			this->computeShapeFunctions(gaussPoint[xi],gaussPoint[eta], coords, B, Ni,  detJ);
 			double detWeight = detJ * wGauss[xi] * wGauss[eta]; //Combined weights and detJ
+			// find viscosity at the integration point, i.e interpolate temperature 
+			double T_i = 0;
+			for (int i=1;i<nnodes;i++) T_i+= T[nodes[i]]*Ni[i];
+
+			//double mu = computeVisc(T_i,params.mu,params.alpha);
+			double mu = params.mu;
 			// in my notation the i and j are switched, in pittman's paper it would be swapped
 			for (int j = 0; j < nnodes; j++)
 			{
@@ -192,6 +221,9 @@ void BiLinearQuadThermalFluid::computeFluidKandM(vector<Point2D> const & coords,
 	nGauss = 2;
 	gaussPoint.clear();wGauss.clear();
 	initGaussVars( nGauss, wGauss, gaussPoint);
+
+	double lambda = params.lambda*params.mu; // you have to scale the lambda with the viscosity
+
 	dMatrix2D<double> k_lambda(nnodes*2,nnodes*2);
 	k_lambda =0;
 
@@ -338,6 +370,7 @@ void  BiLinearQuadThermalFluid::addLocalStifandMassToGlobal( dMatrix2D<double>  
 				data.K[ry][sy] += k[2*i+1][2*j+1];
 				// TODO addd mass to fluid, dont need it for pipe sagging
 			}
+
 			if (type == THERMAL)
 			{
 				data.K[this->nodes[i]][this->nodes[j]] += k[i][j];

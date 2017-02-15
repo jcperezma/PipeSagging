@@ -13,11 +13,10 @@ struct FE_data{
 	vector<double> BC_F;	// Values of force applied at nodes
 	vector<int> BC_U_id;	// Physical constrain indices
 	vector<double> BC_U;	// Values of physical constrains
-	spMatrix2D<double> K;	
-	spMatrix2D<double> K_reduced; // must be same type as K
-	spMatrix2D<double> M;	// mass Matrix
+	dMatrix2D<double> K;	
+	dMatrix2D<double> K_reduced; // must be same type as K
+	dMatrix2D<double> M;	// mass Matrix
 	vector<double> u_reduced;
-	double U_o;				// initial displacement field
 	vector<double>F;
 	
 	int dim;				// num of Dimensions of variable U
@@ -29,7 +28,7 @@ struct FE_data{
 // simulation parameters needed by the thermal fluid element
 struct SimParameters{
 	double rho;     // fluid density
-	double mu;	    // fluid viscosity
+	double mu;	    // zero shear fluid viscosity
 	double lambda;  // penalty constant
 	double g_y;     // gravity
 	int nGauss;     // number of Gauss points used in the integration
@@ -37,6 +36,8 @@ struct SimParameters{
 	double Cp;		// heat capacity
 	double dt;		//time step
 	double theta;	// theta parameter
+	double alpha;	// temperature dependence shift factor for viscosity
+	double T_o;		// initial field temperature
 
 };
 

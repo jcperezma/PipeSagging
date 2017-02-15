@@ -14,9 +14,9 @@ class ThermalFluidMesh {
 public:
 	virtual void initializeFromFile(const string & fileName);
 	virtual void assembleGlobalStifMatrix(physType const & type, bool computeM);
-	virtual void assembleTemporalMatrices(physType const & type);
 	virtual void findDisplacements(physType const & type);
 	virtual void advanceMesh();
+	virtual void advanceTemperatureField();
 
 	// output operations
 	virtual void prindPVDDataset (ofstream &out, int step, string filename );

@@ -596,12 +596,12 @@ dMatrix2D<T> operator * (dMatrix2D<T> & A, T B ){
 template <typename T>
 dMatrix2D<T> operator * ( T B,dMatrix2D<T> & A ){
 	// Matrix multiplication
-	Matrix2D<T> C(A.getnRows(),A.getNColumns());
+	dMatrix2D<T> C(A.getnRows(),A.getNColumns());
 		for (int i = 0; i < A.getnRows(); i++)
 			{
-				for (int j = 0; j < B.getNColumns(); j++)
+				for (int j = 0; j < A.getNColumns(); j++)
 				{
-						C.data[i][j] = A[i][j]*B;
+						C[i][j] = A[i][j]*B;
 				}
 			}
 
@@ -750,7 +750,7 @@ template <typename T>
 	template <typename T >
 vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b, vector<T> & initGuess){
 	// uses conjugate gradient method 
-	T tol = 0.1;
+	T tol = 0.5;
 	// initialize guess
 	vector<T> x =initGuess;
 	//for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);

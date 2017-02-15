@@ -304,8 +304,8 @@ for ( auto it =rowData.begin(); it !=rowData.end(); ++it)
 	}
 // didn't find column
 
-	
-	return T(0);
+	T result = 0; // this is terribly wrong
+	return result;
 }
 
 void rowPlus(row<T> & B, row<T> &result) override{
