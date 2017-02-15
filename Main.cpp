@@ -25,18 +25,18 @@ int main() {
 	
 	
 	ThermalFluidMesh FE2DMesh;
-	FE2DMesh.initializeFromFile("BottomFreeBoundary10x10.txt");
+	FE2DMesh.initializeFromFile("pipe1Out.txt");
 
 	clock_t timer_start =clock();
 
-	FE2DMesh.assembleGlobalStifMatrix(FLUID);
+	FE2DMesh.assembleGlobalStifMatrix(FLUID,false);
 	FE2DMesh.findDisplacements(FLUID);
 	//FE2DMesh.assembleGlobalStifandMassMatrix(THERMAL);
 	//FE2DMesh.assembleTemporalMatrices(THERMAL);
 	//FE2DMesh.findDisplacements(THERMAL);
 
 	clock_t timer_end =clock();
-	FE2DMesh.printVTUfile("results.vtu");
+	FE2DMesh.printVTUfile("pipeStatic.vtu");
 	
 	double elapsed_secs = double(timer_end - timer_start) / CLOCKS_PER_SEC;
 	

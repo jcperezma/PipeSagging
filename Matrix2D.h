@@ -20,6 +20,7 @@ public:
 	virtual void removeZeros() =0;
 	virtual Matrix2D<T>&  transpose() =0 ;
 	~Matrix2D() {}
+	virtual void setToZero() =0;
 	
 	virtual row<T> & getRow(int i) =0;
 	vector<T>const operator*(vector<T>const & b){
@@ -236,7 +237,12 @@ public:
 		}
 	}
 	virtual int getnRows()override { return matrixData.size();};
-
+	virtual void setToZero() override{
+		for (int i = 0; i < getnRows(); i++)
+		{
+			matrixData[i].setToZero();
+		}	
+	};
 	protected:
 		int nColumns;
 		vector<Denserow<T>> matrixData;
@@ -360,6 +366,7 @@ public:
 	}
 
 	 virtual int getnRows()override { return matrixData.size();};
+	
 protected :
 	 vector<Sparserow<T>> matrixData;
 };
@@ -750,7 +757,7 @@ template <typename T>
 	template <typename T >
 vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b, vector<T> & initGuess){
 	// uses conjugate gradient method 
-	T tol = 0.5;
+	T tol = 0.3;
 	// initialize guess
 	vector<T> x =initGuess;
 	//for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);

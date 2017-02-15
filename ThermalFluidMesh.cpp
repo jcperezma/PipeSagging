@@ -120,7 +120,7 @@ void ThermalFluidMesh::printPVDfileFooter(ofstream & out){
 
 }
 
-void ThermalFluidMesh::assembleTemporalMatrices(physType const & type){
+void ThermalFluidMesh::advanceTemperatureField(){
 	// The idea is to end up with a system of equations
 	// of the type K_t T_new = F_t
 	// where 
@@ -640,7 +640,7 @@ void ThermalFluidMesh::initializeFromFile(const string & fileName){
 	getline (tempFile,line);
 	ss<<line;
 	ss>>this->params.rho; ss>>this->params.mu; ss>>this->params.lambda; ss>>this->params.g_y; ss>>this->params.nGauss;
-	ss>>this->params.kappa; ss>>params.theta; ss>>params.dt; ss>>params.Cp;ss>>thermalData.U_o;
+	ss>>this->params.kappa; ss>>params.theta; ss>>params.dt; ss>>params.Cp;ss>>params.T_o;
 	ss=stringstream();// flush stream
 
 	// read mesh topology

@@ -13,9 +13,9 @@ struct FE_data{
 	vector<double> BC_F;	// Values of force applied at nodes
 	vector<int> BC_U_id;	// Physical constrain indices
 	vector<double> BC_U;	// Values of physical constrains
-	dMatrix2D<double> K;	
-	dMatrix2D<double> K_reduced; // must be same type as K
-	dMatrix2D<double> M;	// mass Matrix
+	spMatrix2D<double> K;	
+	spMatrix2D<double> K_reduced; // must be same type as K
+	spMatrix2D<double> M;	// mass Matrix
 	vector<double> u_reduced;
 	vector<double>F;
 	
