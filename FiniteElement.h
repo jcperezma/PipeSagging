@@ -38,13 +38,20 @@ struct SimParameters{
 
 };
 
+
+struct integrationPointVals{
+	dMatrix2D<double> del; // derivatives of the shape functions in local coords
+	vector<double> Ni;		// shape functions
+	double w1w2;			// combined gauss point weight
+};
+
 class FiniteElement {
 public :
 	virtual void  getElementArea(double &area, vector<Point2D> const & coords)=0;
 	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params)=0;
 	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params)=0;
 	virtual void  addLocalstifToGlobal( dMatrix2D<double> & k, vector<double> const & f, FE_data & data, physType const & type)=0;
-	//virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data_trans & data, physType const & type)=0;
+	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data & data, physType const & type)=0;
 
 	void  setNodeIds(vector<int> & indices ) { 	nodes.assign(indices.begin(),indices.end());}
 	vector<int> getNodes(){return nodes;};
@@ -75,16 +82,20 @@ public:
 	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params);
 	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params);
 	virtual void  addLocalstifToGlobal( dMatrix2D<double> & k, vector<double> const & f, FE_data & data, physType const & type) override;
-//	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data_trans & data, physType const & type) override;
+	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data & data, physType const & type) override;
 
 	void computeShapeFunctions(double const & Xi, double const & eta, vector<Point2D> const & coords, dMatrix2D<double> & B, vector<double>& Ni,double & detJ);
 	
+	//static void intitializeIntegrationData();
+
 protected:
 	void computeFluidK(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, SimParameters & params);
 	void computeThermalK(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, SimParameters & params);
 	//void computeFluidKandM(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,vector<double> & f, SimParameters & params);
 	void computeThermalKandM(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,vector<double> & f, SimParameters & params);
 	int nnodes ; //number of nodes per element
-
+	void getIntegrationData(int ngauss, int gaussPointID,double & w1w2, dMatrix2D<double> & Del, vector<double> & Ni);
+	void computeDetandDerivs(vector<Point2D> const & coords, dMatrix2D<double>Del, vector<double>const & Ni, double &detJ,dMatrix2D<double>&B );
+	static vector<vector<integrationPointVals>> gaussPointVals;
 };
 

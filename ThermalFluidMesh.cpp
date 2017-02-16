@@ -2,83 +2,47 @@
 
 
 
-void ThermalFluidMesh::assembleGlobalStifMatrix(physType const & type, bool computeM){
 
-	// compute stiffness Matrix for each element and add it to the global stiffness matrix
-	dMatrix2D<double> k;
-	vector<double> f;
-	dMatrix2D<double> m;
+void ThermalFluidMesh::assembleGlobalStifMatrix(physType const & type,  bool computeM){
+
+	// Switch so it passes the appropiate type of data, a lot cleaner. 
 	switch (type)
 	{
 	case FLUID:
-		k.resize(18,18);
-		f.resize(18);
-
-	break;
+		DoAssembleGlobalStifMatrix(type,fluidData,computeM);
+		break;
 	case THERMAL:
-		k.resize(9,9);
-		f.resize(9);
-	break;
+		DoAssembleGlobalStifMatrix(type,thermalData,computeM);
+		break;
 	default:
 		break;
 	}
-	
-	for (auto &element: elements )
-	{
-		element->computeLocalStifMatrix(coords,k,f,type,params);
 
-		switch (type)
-		{
-		case FLUID:
-			element->addLocalstifToGlobal(k,f,fluidData,type);
-				break;
-		case THERMAL:
-			//element->addLocalstifToGlobal(k,f,thermalData,type);
-				break;
-		default:
-			break;
-		}
-	}
 }
 
-void ThermalFluidMesh::assembleGlobalStifandMassMatrix(physType const & type){
+void ThermalFluidMesh::DoAssembleGlobalStifMatrix(physType const & type, FE_data & data, bool computeM){
 
 	// compute stiffness Matrix for each element and add it to the global stiffness matrix
-	dMatrix2D<double> k;
-	dMatrix2D<double> m;
-	vector<double> f;
-	switch (type)
-	{
-	case FLUID:
-		k.resize(18,18);
-		m.resize(18,18);
-		f.resize(18);
-	break;
-	case THERMAL:
-		k.resize(9,9);
-		m.resize(9,9);
-		f.resize(9);
-	break;
-	default:
-		break;
-	}
+	dMatrix2D<double> k(9*data.dim,9*data.dim);
+	vector<double> f(9*data.dim);
+	dMatrix2D<double> m(9*data.dim,9*data.dim);
 	
-	for (auto &element: elements )
-	{
-		element->computeLocalStifandMassMatrix(coords,k,m,f,type,params);
-
-		switch (type)
+	if(!computeM){
+		for (auto &element: elements )
 		{
-		case FLUID:
-			//element->addLocalStifandMassToGlobal(k,m,f,fluidData,type);
-				break;
-		case THERMAL:
-			//element->addLocalStifandMassToGlobal(k,m,f,thermalData,type);
-				break;
-		default:
-			break;
+			element->computeLocalStifMatrix(coords,k,f,type,params);
+			element->addLocalstifToGlobal(k,f,data,type);
 		}
 	}
+
+	if(computeM){
+		for (auto &element: elements )
+		{
+			element->computeLocalStifandMassMatrix(coords, k, m, f, type, params);
+			element->addLocalStifandMassToGlobal( k, m,  f,  data,  type);
+		}
+	}
+
 }
 
 
@@ -237,6 +201,7 @@ void DoFindDisplacements( FE_data & data  ){
 	// 2)Add displacements boundary conditions
 	//  modify right hand side  vector to account for the velocity BC
 	int num_displacement_DOF = data.DOFid.size();
+	/*
 	for (int i = 0; i < data.BC_U_id.size();i++)
 	{
 		for (int j = 0; j < num_displacement_DOF; j++)
@@ -246,6 +211,11 @@ void DoFindDisplacements( FE_data & data  ){
 			data.F[rowIndex] -= data.K[rowIndex][columnIndex]*data.BC_U[i];
 		}
 	}
+	*/
+	vector<double> BCRHS = data.K*data.U;
+	
+	for (int i = 0; i < data.F.size(); i++) data.F[i]-= BCRHS[i];
+
 
 	// 3)create reduced right hand side vector 
 	vector<double>F_reduced(num_displacement_DOF); 
@@ -608,7 +578,7 @@ void initGlobals(FE_data &Fe_vars, vector<unique_ptr<FiniteElement>>&elements, i
 
 	for (int i = 0; i < Fe_vars.U.size(); i++)
 	{
-		if (i != Fe_vars.BC_U_id[count])
+		if (Fe_vars.BC_U_id.size()>count && i != Fe_vars.BC_U_id[count])
 		{
 			// it has not been prescribed
 			Fe_vars.DOFid.push_back(i);

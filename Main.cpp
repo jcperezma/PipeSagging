@@ -27,7 +27,7 @@ int main() {
 	
 	
 	ThermalFluidMesh FE2DMesh;
-	FE2DMesh.initializeFromFile("pipe1Out.txt");
+	FE2DMesh.initializeFromFile("result10x10.txt");
 
 	clock_t timer_start =clock();
 

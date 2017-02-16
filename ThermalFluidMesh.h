@@ -14,12 +14,13 @@ class ThermalFluidMesh {
 public:
 	virtual void initializeFromFile(const string & fileName);
 	virtual void assembleGlobalStifMatrix(physType const & type, bool computeM);
-	virtual void assembleGlobalStifandMassMatrix(physType const & type);
 	virtual void assembleTemporalMatrices(physType const & type);
 	virtual void findDisplacements(physType const & type);
 	virtual void printDisplacements();
 	virtual void printVTUfile(string fileName);
 protected:
+	virtual void DoAssembleGlobalStifMatrix(physType const & type, FE_data & FEdata, bool computeM);
+
 	vector<unique_ptr<FiniteElement>> elements;
 	vector<Point2D> coords;
 	SimParameters params;   // Values needed in the simulation, material properties etc...
