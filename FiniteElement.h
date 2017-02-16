@@ -7,22 +7,6 @@ enum physType{FLUID, THERMAL};
 // Finite Element Data
 struct FE_data{
 	vector<double> U;		// Displacements array, if 2D array (u1, u2, ..., un, v1, v2, ...vn)
-	vector<int> DOFid;		// holds the indices for all the velocities degrees of freedom
-	vector<int> BC_F_id;	// index of force applied to mesh at node, the index is given in the global DOF vector notation, i.e. F = {Fx1, Fy1, Fx2, Fy2, ...,FxN, FyN}, same for all the other arrays
-	vector<double> BC_F;	// Values of force applied at nodes
-	vector<int> BC_U_id;	// Physical constrain indices
-	vector<double> BC_U;	// Values of physical constrains
-	spMatrix2D<double> K;	
-	spMatrix2D<double> K_reduced; // must be same type as K
-	spMatrix2D<double> M;	// mass Matrix
-	vector<double>F;
-	
-	int dim;				// num of Dimensions of variable U
-};
-
-// Finite Element Data
-struct FE_data_trans{		// transcient FE_Data
-	vector<double> U;		// Displacements array, if 2D array (u1, u2, ..., un, v1, v2, ...vn)
 	vector<double> U_old;	// Old displacements
 	vector<int> DOFid;		// holds the indices for all the velocities degrees of freedom
 	vector<int> BC_F_id;	// index of force applied to mesh at node, the index is given in the global DOF vector notation, i.e. F = {Fx1, Fy1, Fx2, Fy2, ...,FxN, FyN}, same for all the other arrays
@@ -33,10 +17,11 @@ struct FE_data_trans{		// transcient FE_Data
 	spMatrix2D<double> K_reduced; // must be same type as K
 	spMatrix2D<double> M;	// mass Matrix
 	vector<double>F;
-	double U_o;				// initial displacement field
-	
+	double U_o;				// initial displacement field	
 	int dim;				// num of Dimensions of variable U
 };
+
+
 
 
 // simulation parameters needed by the thermal fluid element
@@ -59,7 +44,7 @@ public :
 	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params)=0;
 	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params)=0;
 	virtual void  addLocalstifToGlobal( dMatrix2D<double> & k, vector<double> const & f, FE_data & data, physType const & type)=0;
-	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data_trans & data, physType const & type)=0;
+	//virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data_trans & data, physType const & type)=0;
 
 	void  setNodeIds(vector<int> & indices ) { 	nodes.assign(indices.begin(),indices.end());}
 	vector<int> getNodes(){return nodes;};
@@ -90,7 +75,7 @@ public:
 	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params);
 	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params);
 	virtual void  addLocalstifToGlobal( dMatrix2D<double> & k, vector<double> const & f, FE_data & data, physType const & type) override;
-	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data_trans & data, physType const & type) override;
+//	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data_trans & data, physType const & type) override;
 
 	void computeShapeFunctions(double const & Xi, double const & eta, vector<Point2D> const & coords, dMatrix2D<double> & B, vector<double>& Ni,double & detJ);
 	

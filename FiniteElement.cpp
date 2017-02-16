@@ -505,7 +505,7 @@ void  BiLinearQuadThermalFluid::addLocalstifToGlobal( dMatrix2D<double>  & k, ve
 
 }
 
-
+/*
 void  BiLinearQuadThermalFluid::addLocalStifandMassToGlobal( dMatrix2D<double>  & k,dMatrix2D<double> & m, vector<double> const & f, FE_data_trans & data, physType const & type){
 	// For FLUID system k is 18x18
 	// For THERMAL system k is 9x9
@@ -545,4 +545,4 @@ void  BiLinearQuadThermalFluid::addLocalStifandMassToGlobal( dMatrix2D<double>  
 		}
 	}
 
-}
+}*/

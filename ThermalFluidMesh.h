@@ -13,7 +13,7 @@ class ThermalFluidMesh {
 
 public:
 	virtual void initializeFromFile(const string & fileName);
-	virtual void assembleGlobalStifMatrix(physType const & type);
+	virtual void assembleGlobalStifMatrix(physType const & type, bool computeM);
 	virtual void assembleGlobalStifandMassMatrix(physType const & type);
 	virtual void assembleTemporalMatrices(physType const & type);
 	virtual void findDisplacements(physType const & type);
@@ -28,6 +28,6 @@ protected:
 
 	// Arrays for Temperature
 	FE_data thermalData;
-	FE_data_trans thermalData_trans;
+	
 
 };

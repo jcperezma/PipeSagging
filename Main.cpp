@@ -2,6 +2,8 @@
 #include "Matrix2D.h"
 #include <ctime>
 
+#define INCLUDE_MASS_MATRIX true
+#define DONT_INCLUDE_MASS_MATRIX false
 // Finite Elements for fluid dynamics
 // Computes the sagging in an extruded pipe during cooling
 // discretized with bilinear quadrilaterals.
@@ -25,11 +27,11 @@ int main() {
 	
 	
 	ThermalFluidMesh FE2DMesh;
-	FE2DMesh.initializeFromFile("result10x10.txt");
+	FE2DMesh.initializeFromFile("pipe1Out.txt");
 
 	clock_t timer_start =clock();
 
-	FE2DMesh.assembleGlobalStifMatrix(FLUID);
+	FE2DMesh.assembleGlobalStifMatrix(FLUID,DONT_INCLUDE_MASS_MATRIX);
 	FE2DMesh.findDisplacements(FLUID);
 	//FE2DMesh.assembleGlobalStifandMassMatrix(THERMAL);
 	//FE2DMesh.assembleTemporalMatrices(THERMAL);

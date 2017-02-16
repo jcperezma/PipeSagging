@@ -267,6 +267,13 @@ public:
 		
 	};
 
+	void setToZero(){
+		for (int i = 0; i < matrixData.size(); i++)
+		{
+			matrixData[i].setToZero();
+		}
+	};
+	
 	void removeZeros(){
 		for (int i = 0; i < nRows; i++)
 		{
