@@ -138,16 +138,7 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 	// f_x f_y
 	// Ill first do it filling the four submatrices and subvectors following my notation
 	//
-	/*
-	dMatrix2D<double> A11(nnodes,nnodes);
-	dMatrix2D<double> A12(nnodes,nnodes);
-	dMatrix2D<double> A21(nnodes,nnodes);
-	dMatrix2D<double> A22(nnodes,nnodes);
-	
-	A11 =0;
-	A12 =0;
-	A21 =0;
-	A22 =0;*/
+
 	dMatrix2D<double> k_visc(nnodes*2,nnodes*2);
 	vector<double>f_x(nnodes);
 	vector<double>f_y(nnodes);
@@ -197,17 +188,7 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 					// remember
 					// B =   | dNi/dx | 0
 					//	     | dNi/dy | 1
-					/*
 					
-					A11[j][i]+= ( (2*mu+lambda)*B[dx][j]*B[dx][i] + mu * B[dy][j] * B[dy][j] )* detWeight;
-					A21[j][i]+= ( mu*B[dy][i]*B[dx][j] + lambda*B[dx][i]* B[dy][j] ) * detWeight;
-					A12[j][i]+= ( mu*B[dy][j]*B[dx][i] + lambda*B[dx][j]* B[dy][i] ) * detWeight;
-					A22[j][i]+= ( (2*mu+lambda)*B[dy][i]*B[dy][j] + mu * B[dx][i] * B[dx][j] )* detWeight;
-					// With Laplacian/*
-					/*
-					k_visc.data[2*i][2*j] += mu*(B.data[dx][i] * B.data[dx][j] + B.data[dy][i] * B.data[dy][j])* detWeight;
-					k_visc.data[2*i+1][2*j+1] += mu*(B.data[dx][i] * B.data[dx][j] + B.data[dy][i] * B.data[dy][j])* detWeight;
-					*/
 					// with stokes 
 					enum {dx, dy};
 					k_visc[2*i][2*j] += mu*(2 * B[dx][i] * B[dx][j] + B[dy][i] * B[dy][j])* detWeight;
