@@ -1,5 +1,29 @@
 #include "FiniteElement.h"
 
+double computeVisc(double const & T, double const & zero_shear_mu, double const & alpha){
+	double visc =0.0;
+ 		 
+	if(T >120 ){
+		visc= zero_shear_mu * exp(alpha/T  );
+		return visc;
+	}
+
+	if(T<=120 && T >100){
+		double x2 = 120;
+		double y2 = zero_shear_mu * exp(alpha/120  );	// I could pre compute this
+		double x1 = 100;
+		double y1 = y2*100;
+		double m = (y2-y1)/(x2-x1);
+		double b = y1 - m * x1;
+		visc = m * T +b;
+		return visc;
+	}
+	if(T<= 100){
+		visc = zero_shear_mu * exp(alpha/120  )*100;
+	}
+
+	return visc;
+}
 
 void initGaussVars(int const &   nGauss, vector<double> & wGauss,vector <double> &  gaussPoint){
 	// initialize the gauss variables used for the integration depending on how many gauss points will be used
@@ -229,6 +253,8 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 			// in my notation the i and j are switched, in pittman's paper it would be swapped
 			for (int j = 0; j < nnodes; j++)
 			{
+				f[j*2] = 0;							  // there are no source terms in X
+				f[j*2+1] += -rho * g_y *Ni[j]*detWeight; // source term in Y is gravity
 				for (int i = 0; i < nnodes; i++)
 				{
 					// remember
@@ -248,7 +274,7 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 	}
 
 	// find penalty matrix, with a reduced integration
-	nGauss = 2;
+	nGauss--;
 	gaussPoint.clear();wGauss.clear();
 	initGaussVars( nGauss, wGauss, gaussPoint);
 	dMatrix2D<double> k_lambda(nnodes*2,nnodes*2);
@@ -269,8 +295,6 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 			// in my notation the i and j are switched, in pittman's paper it would be swapped
 			for (int i = 0; i < nnodes; i++)
 			{
-				f[i*2] = 0;							  // there are no source terms in X
-				f[i*2+1] += -rho * g_y *Ni[i]*detWeight; // source term in Y is gravity
 				for (int j = 0; j < nnodes; j++)
 				{
 					// remember

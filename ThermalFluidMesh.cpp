@@ -26,7 +26,7 @@ void ThermalFluidMesh::DoAssembleGlobalStifMatrix(physType const & type, FE_data
 	dMatrix2D<double> k(9*data.dim,9*data.dim);
 	vector<double> f(9*data.dim);
 	dMatrix2D<double> m(9*data.dim,9*data.dim);
-	
+
 	if(!computeM){
 		for (auto &element: elements )
 		{
@@ -109,7 +109,7 @@ void ThermalFluidMesh::assembleTemporalMatrices(physType const & type){
 	//initialize K_reduced, depends if it is dense or sparse
 	// this is actually the one that has to be sparse
 	spMatrix2D<double> K_treduced;
-	K_t.reduce(K_treduced,thermalData.DOFid,thermalData.BC_U_id); // did it this way to have the definition of K and K_reduced in the same place
+	//K_t.reduce(K_treduced,thermalData.DOFid,thermalData.BC_U_id); // did it this way to have the definition of K and K_reduced in the same place
 
 	// apply boundary conditions to F_t and reduce F_t
 
@@ -229,12 +229,12 @@ void DoFindDisplacements( FE_data & data  ){
 
 	//initialize K_reduced, depends if it is dense or sparse
 	// this is actually the one that has to be sparse
-
-	data.K.reduce(data.K_reduced,data.DOFid,data.BC_U_id); // did it this way to have the definition of K and K_reduced in the same place
-
+	
+	//data.K.reduce(data.K_reduced,data.DOFid,data.BC_U_id); // did it this way to have the definition of K and K_reduced in the same place
+	reduce(data.K,data.K_reduced,data.DOFid,data.BC_U_id);
 
 	//printMatrix("matrix.txt",data.K_reduced);
-	printVector("vector.txt",F_reduced);
+	//printVector("vector.txt",F_reduced);
 
 	// 5)solve the reduced system of equations
 	//vector<double> reduced_u = solveSystemIter(K_reduced,F_reduced);
@@ -520,7 +520,7 @@ void initK(spMatrix2D<double>& K, vector<unique_ptr<FiniteElement>>& elements, i
 
 }
 
-void initK(spMatrix2D<double>& K, spMatrix2D<double>& M, vector<unique_ptr<FiniteElement>>& elements, int NumNodes, int dim ){
+void initK(spMatrix2D<double>& K, spMatrix2D<double>& M, vector<unique_ptr<FiniteElement>>& elements, int NumNodes, int dim, vector<bool> & isBC ){
 // TODO something for the sparse matrix case
 
 	// First resize Matrix
@@ -540,8 +540,9 @@ void initK(spMatrix2D<double>& K, spMatrix2D<double>& M, vector<unique_ptr<Finit
 				{
 					for (int j = 0; j < dim; j++)
 					{
-						K.addItem(p+i,q+j,0.);
-						M.addItem(p+i,q+j,0.);
+
+						K.addItem(p+i,q+j,0.,isBC[q+j]);
+						M.addItem(p+i,q+j,0.,isBC[q+j]);
 					}
 				}
 			}
@@ -552,7 +553,7 @@ void initK(spMatrix2D<double>& K, spMatrix2D<double>& M, vector<unique_ptr<Finit
 
 void initGlobals(FE_data &Fe_vars, vector<unique_ptr<FiniteElement>>&elements, int NumNodes ){
 	
-	initK(Fe_vars.K,elements,NumNodes,Fe_vars.dim);
+	
 
 	// allocate and initialize displacementes array
 	Fe_vars.U.resize(NumNodes*Fe_vars.dim);
@@ -575,20 +576,24 @@ void initGlobals(FE_data &Fe_vars, vector<unique_ptr<FiniteElement>>&elements, i
 	int count =0;
 
 	// for the velocity
-
+	vector<bool> isBCvector;
 	for (int i = 0; i < Fe_vars.U.size(); i++)
 	{
+		bool isBC= false;
 		if (Fe_vars.BC_U_id.size()>count && i != Fe_vars.BC_U_id[count])
 		{
 			// it has not been prescribed
 			Fe_vars.DOFid.push_back(i);
 		}else
 		{
+			isBC = true;
 			// it has been prescribed check next prescribed index
 			count ++;
 		}
+		isBCvector.push_back(isBC);
 	}
-
+	
+	initK(Fe_vars.K,Fe_vars.M,elements,NumNodes,Fe_vars.dim,isBCvector);
 }
 
 
@@ -669,8 +674,8 @@ void ThermalFluidMesh::initializeFromFile(const string & fileName){
 	
 
 	// for the thermal variables
-	//thermalData_trans.dim=1;
-	//initGlobals(thermalData_trans, elements, coords.size() );
+	thermalData.dim=1;
+	initGlobals(thermalData, elements, coords.size() );
 	
 
 }
@@ -684,5 +689,13 @@ void ThermalFluidMesh::printDisplacements(){
 	{
 		cout<<DOF_ID <<	"	 "<< displacement<<"\n";
 		DOF_ID++;
+	}
+}
+
+void ThermalFluidMesh::advanceMesh(){
+	for (int i = 0; i < coords.size(); i++)
+	{
+		coords[i].x+= params.dt * fluidData.U[i*fluidData.dim];
+		coords[i].y+= params.dt * fluidData.U[i*fluidData.dim+1];
 	}
 }

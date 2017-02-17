@@ -18,6 +18,7 @@ public:
 	virtual void findDisplacements(physType const & type);
 	virtual void printDisplacements();
 	virtual void printVTUfile(string fileName);
+	virtual void advanceMesh();
 protected:
 	virtual void DoAssembleGlobalStifMatrix(physType const & type, FE_data & FEdata, bool computeM);
 

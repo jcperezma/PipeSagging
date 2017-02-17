@@ -270,6 +270,11 @@ public:
 		
 	};
 
+	void addItem(int const i, int const j, T const & entry, bool isBC){
+		matrixData[i].insertNextItem(entry,j, isBC);
+		
+	};
+
 	void setToZero(){
 		for (int i = 0; i < matrixData.size(); i++)
 		{
@@ -286,6 +291,13 @@ public:
 		for (int i = 0; i < nRows; i++)
 		{
 			matrixData[i].removeZeros();
+		}
+	};
+
+	void removeBC(vector<int> & idMap){
+		for (int i = 0; i < matrixData.size(); i++)
+		{
+			matrixData[i].removeBCcolumns(idMap);
 		}
 	};
 	/*
@@ -326,21 +338,18 @@ public:
 
 	return tranposedMat;
 }
-	 
-	 void eraseRow(int rowID){
-		 matrixData.erase(matrixData.begin()+rowID);
-	 }
 
-	 void reduce(spMatrix2D<T> & K_reduced , vector<int> & DOF_ID, vector<int> & BC_ID){
+ friend void reduce(spMatrix2D<T> & K, spMatrix2D<T> & K_reduced , vector<int> & DOF_ID, vector<int> & BC_ID)
+{
 		int num_BC = BC_ID.size();
 		
 
 		// indices to map the new column Ids
-		vector<int> idMap(getnRows());
+		vector<int> idMap(K.matrixData.size());
 
 		int count =0;
 		int indexCount=1;
-		for (int i = 0; i < getnRows(); i++)
+		for (int i = 0; i < K.matrixData.size(); i++)
 		{
 			if (i==BC_ID[count])
 			{
@@ -351,22 +360,25 @@ public:
 		}
 
 		
-		//K_reduced.resize(DOF_ID.size(),DOF_ID.size());
-		// erase rows form back to front
+		K_reduced.resize(DOF_ID.size(),DOF_ID.size());
+
 		for (int i =0; i <DOF_ID.size();  i++)
 		{
-			K_reduced.addRow(matrixData[DOF_ID[i]]);
+			K_reduced.matrixData[i] = K.matrixData[DOF_ID[i]];
+			//K_reduced.addRow(matrixData[DOF_ID[i]]);
 		}
 
-
-		for (int i = 0; i < K_reduced.getnRows(); i++)
-		{
-			K_reduced[i].removeColumns(BC_ID,idMap);
-		}
+		K_reduced.removeBC(idMap);
 
 		
 
 	}
+	 
+	 void eraseRow(int rowID){
+		 matrixData.erase(matrixData.begin()+rowID);
+	 }
+
+	
 
 	 virtual int const getnRows()const override { return matrixData.size();};
 protected :
@@ -893,3 +905,4 @@ vector<T> solveSystemIterPCG(Matrix2D<T>&A ,vector<T> &b, Matrix2D<T> & L,Matrix
 
 
 }
+
