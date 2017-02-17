@@ -112,133 +112,9 @@ vector<vector<integrationPointVals>> initializeIntegrationVector(){
 	return gaussPointVals;
 }
 
-/*
-// Triangular element
-void BiLinearQuadThermalFluid::intitializeIntegrationData(){
-	
-	gaussPointVals.resize(3);
-	// for the cases where you use 1, 2 or 3 gauss points
-	for (int i = 1; i < 4; i++) 
-	{
-		vector <double>   wGauss;
-		vector <double>   gaussPoint;
-		initGaussVars(   i,  wGauss, gaussPoint);
-
-		for (int m = 0; m < i; m++)
-		{
-			for (int n = 0; n < i; n++)
-			{
-				// compute Ni, Del and w1w2 for this combination of gauss points
-				integrationPointVals val;
-				val.w1w2 = wGauss[m] * wGauss[n]; 
-				computeNiandDel(gaussPoint[m],gaussPoint[n],val.del,val.Ni);
-				gaussPointVals[i-1].push_back(val);					
-			}
-		}
-
-	}
-
-}*/
 
 vector<vector<integrationPointVals>> BiLinearQuadThermalFluid::gaussPointVals = initializeIntegrationVector();
 
-void BiLinearQuadThermalFluid::computeShapeFunctions(double const & xi, double const & eta, vector<Point2D> const & coords, dMatrix2D<double> & B, vector<double>& Ni, double & detJ){
-	// computes shape functions and derivatives of shpae functions evaluated and xi and eta. 
-	// there are n*n number of Ni and Del arrays, can be computed apriori. I would be saving ~50 operationn per integration
-	// point, which means 50xn^2 operations fewer per element, 450 for 9 noded elements, 
-	// computes:
-	// matrix B
-	// B =   | dNi/dx | 0
-	//	     | dNi/dy | 1
-	// Shape functions Ni(xi,eta) 
-	// Determinant of the Jacobian
-	
-	double minuseta  = 0.5*eta*(1-eta);
-	double pluseta   = 0.5*eta*(1+eta);
-	double minusxi   = 0.5*xi*(1-xi);
-	double plusxi    = 0.5*xi*(1+xi);
-	double minuseta2 = 1-eta*eta;
-	double minusxi2  = 1-xi*xi;
-	
-	// compute shape functions Ni(xi,eta)
-
-	Ni[0]=  minusxi  *  minuseta;
-	Ni[1]= -plusxi   *  minuseta;
-	Ni[2]=  plusxi   *  pluseta;
-	Ni[3]= -minusxi  *  pluseta;
-	Ni[4]= -minusxi2 *  minuseta;
-	Ni[5]=  plusxi   *  minuseta2;
-	Ni[6]=  minusxi2 *  pluseta;
-	Ni[7]= -minusxi  *  minuseta2;
-	Ni[8]=  minusxi2 *  minuseta2;
-
-	// compute derivatives of shape functions
-	// Del = | dNi/dxi  | 0
-	//	     | dNi/deta | 1
-	
-	double minus2xi  = 0.5*(1-2*xi);
-	double plus2xi   = 0.5*(1+2*xi);
-	double minus2eta = 0.5*(1-2*eta);
-	double plus2eta  = 0.5*(1+2*eta);
-
-	dMatrix2D<double> Del(2,9);
-	// dNi/dxi
-	Del[0][0] =  minus2xi * minuseta ;
-	Del[0][1] = -plus2xi  * minuseta;
-	Del[0][2] =  plus2xi  * pluseta;
-	Del[0][3] = -minus2xi * pluseta;
-	Del[0][4] =  2* xi    * minuseta;
-	Del[0][5] =  plus2xi  * minuseta2;
-	Del[0][6] = -2*xi     * pluseta;
-	Del[0][7] = -minus2xi * minuseta2;
-	Del[0][8] =  -2*xi     * minuseta2;
-
-	// dNi/deta
-	Del[1][0] =  minusxi   * minus2eta ;
-	Del[1][1] = -plusxi    * minus2eta;
-	Del[1][2] =  plusxi    * plus2eta;
-	Del[1][3] = -minusxi   * plus2eta;
-	Del[1][4] = -minusxi2  * minus2eta;
-	Del[1][5] = -2*plusxi  * eta; 
-	Del[1][6] =  minusxi2  * plus2eta;
-	Del[1][7] =  2*minusxi * eta;
-	Del[1][8] = - 2*minusxi2* eta;
-
-	// Compute Jacobian matrix
-	// J = |  dx/dxi  dy/dxi  |
-	//	   |  dx/deta dy/deta |	
-
-	dMatrix2D<double>  J(2,2);     // Jacobian Matrix
-	dMatrix2D<double>  J_inv(2,2); // Inverse of the Jacobian
-	J = 0;
-
-	for (int i = 0; i < 9; i++)
-	{
-		int NodeID = this->nodes[i]; // global node ID
-		Point2D curPosition = coords[NodeID];
-		double partial = Del[0][i]*coords[NodeID].x;
-		J[0][0] += Del[0][i]*coords[NodeID].x ; // dx/dxi  = sum (dNi/dxi Xi)
-		J[0][1] += Del[0][i]*coords[NodeID].y ; // dy/dxi  = sum (dNi/dxi Yi)
-		J[1][0] += Del[1][i]*coords[NodeID].x ; // dx/deta = sum (dNi/deta Xi)
-		J[1][1] += Del[1][i]*coords[NodeID].y ; // dy/deta = sum (dNi/deta Yi)
-	}
-
-	detJ = J[0][0] * J[1][1] - J[0][1] * J[1][0] ;
-
-	// Compute inverse of the Jacobian
-	double coeff = 1 / detJ;
-	J_inv[0][0] = coeff *  J[1][1];
-	J_inv[0][1] = coeff * -J[0][1];
-	J_inv[1][0] = coeff * -J[1][0];
-	J_inv[1][1] = coeff *  J[0][0];
-
-	// compute matrix B
-	// B =   | dNi/dx | 0
-	//	     | dNi/dy | 1
-
-	B = J_inv.matMul(Del);
-
-}
 
 void BiLinearQuadThermalFluid::computeDetandDerivs(vector<Point2D> const & coords, dMatrix2D<double>   Del, vector<double>const  & Ni, double &detJ, dMatrix2D<double>&B){
 	
@@ -353,8 +229,6 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 			// in my notation the i and j are switched, in pittman's paper it would be swapped
 			for (int j = 0; j < nnodes; j++)
 			{
-				
-
 				for (int i = 0; i < nnodes; i++)
 				{
 					// remember
@@ -380,13 +254,18 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 	dMatrix2D<double> k_lambda(nnodes*2,nnodes*2);
 	k_lambda =0;
 
+	pointID=-1;
 	for (int xi= 0; xi < nGauss; xi++)
 	{
 		for (int eta = 0; eta < nGauss; eta++)
 		{
+			pointID++;
 			// find shape functions and derivatives at xi and eta
-			this->computeShapeFunctions(gaussPoint[xi],gaussPoint[eta], coords, B, Ni,  detJ);
-			double detWeight = detJ * wGauss[xi] * wGauss[eta]; //Combined weights and detJ
+			double w1w2;
+			//vector<double> Ni2;
+			getIntegrationData(nGauss,pointID,w1w2,del,Ni);
+			computeDetandDerivs(coords,del,Ni,detJ,B);
+			double detWeight = detJ * w1w2; //Combined weights and detJ
 			// in my notation the i and j are switched, in pittman's paper it would be swapped
 			for (int i = 0; i < nnodes; i++)
 			{
@@ -398,8 +277,6 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 					// B =   | dNi/dx | 0
 					//	     | dNi/dy | 1
 					enum {dx, dy};
-					
-
 					k_lambda[2*i][2*j] += lambda*(B[dx][i] * B[dx][j] )* detWeight;
 					k_lambda[2*i+1][2*j+1] += lambda*(B[dy][i] * B[dy][j])* detWeight;
 					k_lambda[2*i][2*j+1] += lambda*( B[dx][i] * B[dy][j])* detWeight;
@@ -430,6 +307,7 @@ void BiLinearQuadThermalFluid::computeThermalK(vector<Point2D> const & coords, d
 	initGaussVars( nGauss, wGauss, gaussPoint);
 
 	dMatrix2D<double>  B;
+	dMatrix2D<double>  del;
 	vector<double>  Ni(nnodes);
 	double detJ;
 
@@ -441,15 +319,19 @@ void BiLinearQuadThermalFluid::computeThermalK(vector<Point2D> const & coords, d
 	{
 		f_x[i] = 0; 
 	}
-
+	int pointID =-1;
 	// integrate with respect of xi and eta
 	for (int xi= 0; xi < nGauss; xi++)
 	{
 		for (int eta = 0; eta < nGauss; eta++)
 		{
+			pointID++;
 			// find shape functions and derivatives at xi and eta
-			this->computeShapeFunctions(gaussPoint[xi],gaussPoint[eta], coords, B, Ni,  detJ);
-			double detWeight = detJ * wGauss[xi] * wGauss[eta]; //Combined weights and detJ
+			double w1w2;
+			//vector<double> Ni2;
+			getIntegrationData(nGauss,pointID,w1w2,del,Ni);
+			computeDetandDerivs(coords,del,Ni,detJ,B);
+			double detWeight = detJ * w1w2; //Combined weights and detJ
 			// in my notation the i and j are switched, in pittman's paper it would be swapped
 			for (int i = 0; i < nnodes; i++)
 			{
@@ -488,6 +370,7 @@ void BiLinearQuadThermalFluid::computeThermalKandM(vector<Point2D> const & coord
 	initGaussVars( nGauss, wGauss, gaussPoint);
 
 	dMatrix2D<double>  B;
+	dMatrix2D<double>  del;
 	vector<double>  Ni(nnodes);
 	double detJ;
 
@@ -501,15 +384,19 @@ void BiLinearQuadThermalFluid::computeThermalKandM(vector<Point2D> const & coord
 		f_x[i] = 0; 
 	}
 
+	int pointID = -1;
 	// integrate with respect of xi and eta
 	for (int xi= 0; xi < nGauss; xi++)
 	{
 		for (int eta = 0; eta < nGauss; eta++)
 		{
+			pointID++;
 			// find shape functions and derivatives at xi and eta
-			this->computeShapeFunctions(gaussPoint[xi],gaussPoint[eta], coords, B, Ni,  detJ);
-			double detWeight = detJ * wGauss[xi] * wGauss[eta]; //Combined weights and detJ
-			// in my notation the i and j are switched, in pittman's paper it would be swapped
+			double w1w2;
+			//vector<double> Ni2;
+			getIntegrationData(nGauss,pointID,w1w2,del,Ni);
+			computeDetandDerivs(coords,del,Ni,detJ,B);
+			double detWeight = detJ * w1w2; //Combined weights and detJ
 			for (int i = 0; i < nnodes; i++)
 			{
 				f_x[i] = 0;							  // there are no source terms 
