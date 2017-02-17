@@ -27,18 +27,54 @@ int main() {
 	
 	
 	ThermalFluidMesh FE2DMesh;
-	FE2DMesh.initializeFromFile("pipe1Out.txt");
-
+	FE2DMesh.initializeFromFile("pipe2Out.txt");
 	clock_t timer_start =clock();
+	string FN = "results/transResult10.pvd";
+	ofstream ss;
+	ss.open(FN);
+	FE2DMesh.printPVDfileHeading(ss);
+	int fileCount = 0;
+	for (int step = 0; step < 1000; step++)
+	{
+		// print results
+			if ((step % 1) == 0)
+		{
+			char filename[32];
+			sprintf_s(filename, "results/result10_%05d.vtu", fileCount);
+			FE2DMesh.printVTUfile(filename);
+			FE2DMesh.prindPVDDataset(ss,fileCount,filename);
+			fileCount++;
+		}
 
-	FE2DMesh.assembleGlobalStifMatrix(FLUID,DONT_INCLUDE_MASS_MATRIX);
-	FE2DMesh.findDisplacements(FLUID);
+		// solve for fluid and advance mesh
+		FE2DMesh.assembleGlobalStifMatrix(FLUID,DONT_INCLUDE_MASS_MATRIX);
+		FE2DMesh.findDisplacements(FLUID);
+		FE2DMesh.advanceMesh();
+
+		// Find temperature matrices and advance temperature field
+		FE2DMesh.assembleGlobalStifMatrix(THERMAL,INCLUDE_MASS_MATRIX);
+		FE2DMesh.advanceTemperatureField();
+	}
+	// reduce K_t
+	FE2DMesh.printPVDfileFooter(ss);
+	
+
+
+
+
+	//FE2DMesh.assembleGlobalStifMatrix(FLUID,DONT_INCLUDE_MASS_MATRIX);
+	//FE2DMesh.findDisplacements(FLUID);
+	//FE2DMesh.assembleGlobalStifMatrix(FLUID,DONT_INCLUDE_MASS_MATRIX);
+	//FE2DMesh.assembleTemporalMatrices();
+
+	//FE2DMesh.findDisplacements(THERMAL);
+
 	//FE2DMesh.assembleGlobalStifandMassMatrix(THERMAL);
 	//FE2DMesh.assembleTemporalMatrices(THERMAL);
 	//FE2DMesh.findDisplacements(THERMAL);
 
 	clock_t timer_end =clock();
-	FE2DMesh.printVTUfile("results3.vtu");
+	FE2DMesh.printVTUfile("results9.vtu");
 	
 	double elapsed_secs = double(timer_end - timer_start) / CLOCKS_PER_SEC;
 	

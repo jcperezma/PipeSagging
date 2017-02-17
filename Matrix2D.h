@@ -351,7 +351,7 @@ public:
 		int indexCount=1;
 		for (int i = 0; i < K.matrixData.size(); i++)
 		{
-			if (i==BC_ID[count])
+			if (count<BC_ID.size()&&i==BC_ID[count])
 			{
 				
 				count++; // get next BC_ID
@@ -359,7 +359,7 @@ public:
 			idMap[i] = count;
 		}
 
-		
+		K_reduced.matrixData.clear();
 		K_reduced.resize(DOF_ID.size(),DOF_ID.size());
 
 		for (int i =0; i <DOF_ID.size();  i++)
@@ -771,7 +771,7 @@ template <typename T>
 	template <typename T >
 vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b){
 	// uses conjugate gradient method 
-	T tol = 0.3;
+	T tol = 0.1;
 	// initialize guess
 	vector<T> x;
 	for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);
@@ -822,7 +822,7 @@ vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b){
 template <typename T>
 vector<T> solveSystemIterPCG(Matrix2D<T>&A ,vector<T> &b, Matrix2D<T> & L,Matrix2D<T> & Ltrans ){
 	// uses preconditioned conjugate gradient method 
-	double tol = 0.3;
+	double tol = 0.1;
 	// initialize guess
 	vector<T> x;
 	for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);

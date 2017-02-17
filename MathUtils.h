@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <math.h> 
 #include "Matrix2D.h"
 using namespace std;
 

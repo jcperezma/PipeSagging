@@ -183,7 +183,7 @@ void BiLinearQuadThermalFluid::getIntegrationData(int ngauss, int gaussPointID,d
 		Del = gaussPointVals[ngauss-1][gaussPointID].del; 
 		Ni =gaussPointVals[ngauss-1][gaussPointID].Ni; };
 
-void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, SimParameters & params){
+void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords,vector<double> & U, vector<double>& T, dMatrix2D<double> & k, vector<double> & f, SimParameters & params){
 	// For fluids there are two degrees of freedom per node, 
 	// the solution u is organized as u = { u1, u2,..un, v1, v2,..vn }, n is the number of nodes i.e. coords.size()
 	// the load vector is organized as f = {fx1,fx2,..fxn, fy1, fy2,..fyn}
@@ -221,10 +221,16 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 	double detJ;
 
 	// external parameters, I duplicate the values here to not make the code below more verbose.
-	double mu = params.mu;
-	double lambda = params.lambda;
+	//double mu = params.mu;
+	double lambda = params.lambda*params.mu;
 	double rho =params.rho;
 	double g_y =params.g_y;
+	//double mu=43;
+
+	// find viscosity at center point
+
+	double T_i = T[nodes[8]];
+    	double mu = computeVisc(T_i,params.mu,params.alpha);
 
 	
 	for (int i = 0; i < nnodes; i++) 
@@ -249,13 +255,26 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 			getIntegrationData(nGauss,pointID,w1w2,del,Ni);
 			computeDetandDerivs(coords,del,Ni,detJ,B);
 			double detWeight = detJ * w1w2; //Combined weights and detJ
+
+			// find viscosity at the integration point, i.e interpolate temperature 
+			/*
+			double T_i = 0;
+				for (int i=0;i<nnodes;i++) 
+				{
+					double T_par = T[nodes[i]];
+					T_i+= T[nodes[i]]*Ni[i];
+				}
+				
+
+				double mu = params.mu;*/
+				// mu = computeVisc(T_i,params.mu,params.alpha);
 			//double detWeight = detJ * wGauss[xi] * wGauss[eta]; //Combined weights and detJ
 			// in my notation the i and j are switched, in pittman's paper it would be swapped
-			for (int j = 0; j < nnodes; j++)
+			for (int i = 0; i < nnodes; i++)
 			{
-				f[j*2] = 0;							  // there are no source terms in X
-				f[j*2+1] += -rho * g_y *Ni[j]*detWeight; // source term in Y is gravity
-				for (int i = 0; i < nnodes; i++)
+				f[i*2] = 0;							  // there are no source terms in X
+				f[i*2+1] += -rho * g_y *Ni[i]*detWeight; // source term in Y is gravity
+				for (int j = 0; j < nnodes; j++)
 				{
 					// remember
 					// B =   | dNi/dx | 0
@@ -293,6 +312,12 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 			computeDetandDerivs(coords,del,Ni,detJ,B);
 			double detWeight = detJ * w1w2; //Combined weights and detJ
 			// in my notation the i and j are switched, in pittman's paper it would be swapped
+			double T_i = 0;
+				for (int i=1;i<nnodes;i++) T_i+= T[nodes[i]]*Ni[i];
+
+				//double mu = params.mu;
+				//lambda = params.lambda* computeVisc(T_i,params.mu,params.alpha);
+
 			for (int i = 0; i < nnodes; i++)
 			{
 				for (int j = 0; j < nnodes; j++)
@@ -315,13 +340,13 @@ void BiLinearQuadThermalFluid::computeFluidK(vector<Point2D> const & coords, dMa
 
 }
 
-void BiLinearQuadThermalFluid::computeThermalK(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, SimParameters & params){
+void BiLinearQuadThermalFluid::computeThermalK(vector<Point2D> const & coords,vector<double> & U, vector<double>& T, dMatrix2D<double> & k, vector<double> & f, SimParameters & params){
 	// the local stiffnes matrix k is 18x18
 	// the local load vector f is 18x18
 
 	dMatrix2D<double> k_visc(nnodes,nnodes);
 	vector<double>f_x(nnodes); // RHS
-
+	k=0;
 
 	// We have to integrate the values over the element, we will use gauss quadrature with three points in each direction
 	int nGauss = params.nGauss;
@@ -378,7 +403,7 @@ void BiLinearQuadThermalFluid::computeThermalK(vector<Point2D> const & coords, d
 }
 
 
-void BiLinearQuadThermalFluid::computeThermalKandM(vector<Point2D> const & coords, dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> & f, SimParameters & params){
+void BiLinearQuadThermalFluid::computeThermalKandM(vector<Point2D> const & coords,vector<double> & U, vector<double>& T, dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> & f, SimParameters & params){
 	// the local stiffnes matrix k is 18x18
 	// the local load vector f is 18x18
 
@@ -407,6 +432,9 @@ void BiLinearQuadThermalFluid::computeThermalKandM(vector<Point2D> const & coord
 	{
 		f_x[i] = 0; 
 	}
+
+	k=0;
+	m=0;
 
 	int pointID = -1;
 	// integrate with respect of xi and eta
@@ -443,15 +471,15 @@ void BiLinearQuadThermalFluid::computeThermalKandM(vector<Point2D> const & coord
 
 
 }
-void BiLinearQuadThermalFluid::computeLocalStifMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params){
+void BiLinearQuadThermalFluid::computeLocalStifMatrix(vector<Point2D> const & coords, vector<double> & U, vector<double>& T, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params){
 
 	switch (type)
 	{
 	case FLUID :
-		computeFluidK(coords, k, f, params);
+		computeFluidK(coords,U,T, k, f, params);
 			  break;
 	case THERMAL :
-		computeThermalK(coords, k, f, params);
+		computeThermalK(coords,U,T, k, f, params);
 			  break;
 	default:
 		break;
@@ -460,7 +488,7 @@ void BiLinearQuadThermalFluid::computeLocalStifMatrix(vector<Point2D> const & co
 
 }
 
-void BiLinearQuadThermalFluid::computeLocalStifandMassMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k , dMatrix2D<double> & m, vector<double> & f, physType const & type, SimParameters & params){
+void BiLinearQuadThermalFluid::computeLocalStifandMassMatrix(vector<Point2D> const & coords,vector<double> & U, vector<double>& T, dMatrix2D<double> & k , dMatrix2D<double> & m, vector<double> & f, physType const & type, SimParameters & params){
 
 	switch (type)
 	{
@@ -468,7 +496,7 @@ void BiLinearQuadThermalFluid::computeLocalStifandMassMatrix(vector<Point2D> con
 		//computeFluidKandM(coords, k, m, f, params);
 			  break;
 	case THERMAL :
-		computeThermalKandM(coords, k,m, f, params);
+		computeThermalKandM(coords,U,T, k,m, f, params);
 			  break;
 	default:
 		break;
@@ -510,11 +538,11 @@ void  BiLinearQuadThermalFluid::addLocalStifandMassToGlobal( dMatrix2D<double>  
 
 	for (int i = 0; i < nnodes; i++)
 	{
-		for (int m = 0; m < data.dim-1; m++)
+		for (int m = 0; m < data.dim; m++)
 		{
 			data.F[this->nodes[i]*data.dim+m] += f[i*data.dim+m];
 
-			for (int n = 0; n < data.dim-1; n++)
+			for (int n = 0; n < data.dim; n++)
 			{
 				for (int j = 0; j < nnodes; j++)
 				{

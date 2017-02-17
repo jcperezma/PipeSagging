@@ -35,6 +35,7 @@ struct SimParameters{
 	double Cp;		// heat capacity
 	double dt;		//time step
 	double theta;	// theta parameter
+	double alpha;	// viscosity temperature shift factor
 
 };
 
@@ -48,8 +49,8 @@ struct integrationPointVals{
 class FiniteElement {
 public :
 	virtual void  getElementArea(double &area, vector<Point2D> const & coords)=0;
-	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params)=0;
-	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params)=0;
+	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords,vector<double> & U, vector<double>& T, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params)=0;
+	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, vector<double> & U, vector<double>& T,dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params)=0;
 	virtual void  addLocalstifToGlobal( dMatrix2D<double> & k, vector<double> const & f, FE_data & data, physType const & type)=0;
 	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data & data, physType const & type)=0;
 
@@ -79,8 +80,8 @@ public:
 	 BiLinearQuadThermalFluid() {nnodes =9;};
 	~BiLinearQuadThermalFluid() {}
 	void  getElementArea(double &area, vector<Point2D> const & coords){};
-	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params);
-	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params);
+	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords,vector<double> & U, vector<double>& T, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params);
+	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, vector<double> & U, vector<double>& T,dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params);
 	virtual void  addLocalstifToGlobal( dMatrix2D<double> & k, vector<double> const & f, FE_data & data, physType const & type) override;
 	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data & data, physType const & type) override;
 
@@ -89,10 +90,10 @@ public:
 	//static void intitializeIntegrationData();
 
 protected:
-	void computeFluidK(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, SimParameters & params);
-	void computeThermalK(vector<Point2D> const & coords, dMatrix2D<double> & k, vector<double> & f, SimParameters & params);
+	void computeFluidK(vector<Point2D> const & coords, vector<double> & U, vector<double>& T,dMatrix2D<double> & k, vector<double> & f, SimParameters & params);
+	void computeThermalK(vector<Point2D> const & coords, vector<double> & U, vector<double>& T,dMatrix2D<double> & k, vector<double> & f, SimParameters & params);
 	//void computeFluidKandM(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,vector<double> & f, SimParameters & params);
-	void computeThermalKandM(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,vector<double> & f, SimParameters & params);
+	void computeThermalKandM(vector<Point2D> const & coords, vector<double> & U, vector<double>& T,dMatrix2D<double> & k, dMatrix2D<double> & m,vector<double> & f, SimParameters & params);
 	int nnodes ; //number of nodes per element
 	void getIntegrationData(int ngauss, int gaussPointID,double & w1w2, dMatrix2D<double> & Del, vector<double> & Ni);
 	void computeDetandDerivs(vector<Point2D> const & coords, dMatrix2D<double>Del, vector<double>const & Ni, double &detJ,dMatrix2D<double>&B );
