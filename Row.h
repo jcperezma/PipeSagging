@@ -42,12 +42,17 @@ public:
 		return *this;
 	};
 
-	void setToZero()override{
+
+void setToZero()override{
+
 		for (int i = 0; i < rowData.size(); i++)
 		{
 			rowData[i] =0;
 		}
-};
+
+}
+
+
 	vector<T> const & getRowData(){
 		return rowData;
 	};
@@ -144,10 +149,12 @@ template<class T>
 class rowElement{
 	T value;
 	int column;
+	bool isBC;
 public:
 
-	rowElement(const T& val=0, int col=-1): value(val),column(col){}; 
-	rowElement(const rowElement&e): value(e.value),column(e.column){}; // copy constructor
+	//rowElement(const T& val=0, int col=-1): value(val),column(col){}; 
+	rowElement(const T& val=0, int col=-1, bool isBC=false): value(val),column(col), isBC(isBC){}; 
+	rowElement(const rowElement&e): value(e.value),column(e.column),isBC(e.isBC){}; // copy constructor
 
 	const rowElement& operator=(const rowElement&e){ 
 		if(this != &e){
@@ -163,6 +170,7 @@ public:
 	T& getValue() { return value; };  // read the value
 	const T getValue() const { return value; };  // read the value
 	int getColumn() const{ return column; } // return the column
+	bool IsBC() const{return isBC;}
 	const rowElement&  operator+=(const T&t){ // adding a T
 		value += t;
 		return *this;
@@ -244,6 +252,9 @@ return rowElement<T>(e) /= e;
 
 template<typename T>
 bool isZero (const rowElement<T>& element) { return (element.getValue()==0); }
+
+template<typename T>
+bool isBC (const rowElement<T>& element) { return (element.IsBC()); }
 
 
 template<typename T>
@@ -373,6 +384,17 @@ rowElement<T> & getElementAt(int i ) {
 	 rowData.remove_if(isZero<T>);
  };
 
+  void removeBCcolumns(vector<int> & idMap){
+	 rowData.remove_if(isBC<T>);
+
+	 for (auto & e: rowData)
+	 {
+		 if (e.getColumn()!=-1)
+			e.setColumn(e.getColumn()- idMap[e.getColumn()]  );
+	 }
+
+ };
+
  void removeColumns(vector<int> & colIDs, vector<int> & idMap) override{
 	 for (auto colID:colIDs )
 	 {
@@ -389,6 +411,7 @@ rowElement<T> & getElementAt(int i ) {
 	 }
 
  }
+
 
  void removeColumn(int column) override{
 	 rowData.remove_if(IsColumn<T>(column));
@@ -435,6 +458,41 @@ void insertNextItem(const T&val, int col){
 		
 	}
 } 
+
+void insertNextItem(const T&val, int col, bool isBC){
+	rowElement<T> e(val,col,isBC);
+	if (e<*rowData.begin())
+	{
+		rowData.emplace_front(e);
+		return;
+	}
+	for ( auto it =rowData.begin(); it !=rowData.end(); ++it)
+	{
+		if (*it==e) // there is an element in that position, give it a new value
+		{
+			*it = rowElement<T>(val,col);
+		}
+		if (it!=prev(rowData.end()))
+		{
+			if (*it < e && e < *next(it))
+			{
+				rowData.emplace(++it,e);
+				
+				return;
+			}
+		} else
+		{
+			if (*it < e )
+			{
+				rowData.emplace(++it,e);
+				
+				return;
+			}
+		}
+		
+	}
+} 
+
 
 T const  operator*(vector<T>const & vec)const override{
 	T result =0;

@@ -19,6 +19,7 @@ public:
 	virtual void resize(int nRows, int nColumns)=0;
 	virtual void removeZeros() =0;
 	virtual Matrix2D<T>&  transpose() =0 ;
+	virtual void addRow(row<T> & row)= 0;
 	~Matrix2D() {}
 	virtual void setToZero() =0;
 	
@@ -62,7 +63,7 @@ public:
 
 
 	
-	virtual int getnRows()=0;
+	virtual int const getnRows()const=0;
 protected:
 	Matrix2D(int n):nRows(n){};
 	void setnRows(int newRows){nRows=newRows;};	
@@ -76,6 +77,7 @@ class dMatrix2D : public Matrix2D<T>{
 
 public:
 	dMatrix2D():Matrix2D(0){};
+
 	dMatrix2D(int nRows, int nColumns ) : Matrix2D(nRows) , nColumns(nColumns) {
 		matrixData.resize(nRows);
 		for (int i = 0; i < nRows; i++)
@@ -84,10 +86,10 @@ public:
 		}
 		
 	};
-
-	dMatrix2D<T>& dMatrix2D<T>::operator= ( dMatrix2D<T> &A){
 	
-		nRows = A.getnRows();
+	dMatrix2D<T>( dMatrix2D<T>const &A):Matrix2D(0){
+	
+		nRows = A.matrixData.size();
 		nColumns = A.getNColumns();
 		matrixData.resize(nRows);
 		//resize matrix
@@ -103,10 +105,11 @@ public:
 					matrixData[i][j] = A[i][j];
 				}
 			}
-		return *this;
-	
 	}
-	
+
+	virtual void addRow(row<T> & row)override{
+		
+	};
 	row<T>& operator[](int i){
 		return matrixData[i];
 	};
@@ -164,7 +167,7 @@ public:
 	void removeZeros(){
 
 	};
-	dMatrix2D<T> matMul(dMatrix2D<T> & B) {
+	dMatrix2D<T> matMul(dMatrix2D<T>const & B) {
 
 	// Matrix multiplication
 	dMatrix2D<T> C(nRows,B.getNColumns());
@@ -178,7 +181,7 @@ public:
 
 					for (int k = 0; k < nColumns; k++)
 					{
-						C[i][j] += operator[](i)[k]*B[k][j];
+						C[i][j] += matrixData[i][k]*B[k][j];
 					}
 				}
 			}
@@ -236,13 +239,10 @@ public:
 			}
 		}
 	}
-	virtual int getnRows()override { return matrixData.size();};
-	virtual void setToZero() override{
-		for (int i = 0; i < getnRows(); i++)
-		{
-			matrixData[i].setToZero();
-		}	
-	};
+
+	virtual int const getnRows()const override  { return matrixData.size();};
+
+
 	protected:
 		int nColumns;
 		vector<Denserow<T>> matrixData;
@@ -273,6 +273,13 @@ public:
 		
 	};
 
+
+	void addItem(int const i, int const j, T const & entry, bool isBC){
+		matrixData[i].insertNextItem(entry,j, isBC);
+		
+	};
+
+
 	void setToZero(){
 		for (int i = 0; i < matrixData.size(); i++)
 		{
@@ -280,10 +287,24 @@ public:
 		}
 	};
 
+
+	virtual void addRow(row<T> & row)override{
+	};
+	void addRow(Sparserow<T> & row){
+		matrixData.push_back(row);
+	};
+
 	void removeZeros(){
 		for (int i = 0; i < nRows; i++)
 		{
 			matrixData[i].removeZeros();
+		}
+	};
+
+	void removeBC(vector<int> & idMap){
+		for (int i = 0; i < matrixData.size(); i++)
+		{
+			matrixData[i].removeBCcolumns(idMap);
 		}
 	};
 	/*
@@ -324,23 +345,22 @@ public:
 
 	return tranposedMat;
 }
-	 
-	 void eraseRow(int rowID){
-		 matrixData.erase(matrixData.begin()+rowID);
-	 }
 
-	 void reduce(spMatrix2D<T> & K_reduced , vector<int> & DOF_ID, vector<int> & BC_ID){
+ friend void reduce(spMatrix2D<T> & K, spMatrix2D<T> & K_reduced , vector<int> & DOF_ID, vector<int> & BC_ID)
+{
 		int num_BC = BC_ID.size();
-		K_reduced = *this; // copy matrix
+		
 
 		// indices to map the new column Ids
-		vector<int> idMap(getnRows());
+		vector<int> idMap(K.matrixData.size());
 
 		int count =0;
 		int indexCount=1;
-		for (int i = 0; i < getnRows(); i++)
+		for (int i = 0; i < K.matrixData.size(); i++)
 		{
-			if (count < BC_ID.size() &&  i==BC_ID[count])
+
+			if (count<BC_ID.size()&&i==BC_ID[count])
+
 			{
 				
 				count++; // get next BC_ID
@@ -348,25 +368,29 @@ public:
 			idMap[i] = count;
 		}
 
+		K_reduced.matrixData.clear();
+		K_reduced.resize(DOF_ID.size(),DOF_ID.size());
 
-		// erase rows form back to front
-		for (int i = num_BC-1; i >= 0; i--)
+		for (int i =0; i <DOF_ID.size();  i++)
 		{
-			K_reduced.eraseRow(BC_ID[i]);
+			K_reduced.matrixData[i] = K.matrixData[DOF_ID[i]];
+			//K_reduced.addRow(matrixData[DOF_ID[i]]);
 		}
 
-
-		for (int i = 0; i < K_reduced.getnRows(); i++)
-		{
-			K_reduced[i].removeColumns(BC_ID,idMap);
-		}
+		K_reduced.removeBC(idMap);
 
 		
 
 	}
+	 
+	 void eraseRow(int rowID){
+		 matrixData.erase(matrixData.begin()+rowID);
+	 }
 
-	 virtual int getnRows()override { return matrixData.size();};
 	
+
+	 virtual int const getnRows()const override { return matrixData.size();};
+
 protected :
 	 vector<Sparserow<T>> matrixData;
 };
@@ -757,7 +781,9 @@ template <typename T>
 	template <typename T >
 vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b, vector<T> & initGuess){
 	// uses conjugate gradient method 
-	T tol = 0.3;
+
+	T tol = 0.1;
+
 	// initialize guess
 	vector<T> x =initGuess;
 	//for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);
@@ -808,7 +834,7 @@ vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b, vector<T> & initGuess
 template <typename T>
 vector<T> solveSystemIterPCG(Matrix2D<T>&A ,vector<T> &b, Matrix2D<T> & L,Matrix2D<T> & Ltrans ){
 	// uses preconditioned conjugate gradient method 
-	double tol = 0.3;
+	double tol = 0.1;
 	// initialize guess
 	vector<T> x;
 	for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);
@@ -891,3 +917,4 @@ vector<T> solveSystemIterPCG(Matrix2D<T>&A ,vector<T> &b, Matrix2D<T> & L,Matrix
 
 
 }
+
