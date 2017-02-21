@@ -42,12 +42,17 @@ public:
 		return *this;
 	};
 
+
 void setToZero()override{
+
 		for (int i = 0; i < rowData.size(); i++)
 		{
 			rowData[i] =0;
 		}
+
 }
+
+
 	vector<T> const & getRowData(){
 		return rowData;
 	};
@@ -310,7 +315,7 @@ for ( auto it =rowData.begin(); it !=rowData.end(); ++it)
 	}
 // didn't find column
 
-	T result =0;
+	T result = 0; // this is terribly wrong
 	return result;
 }
 

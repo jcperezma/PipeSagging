@@ -25,7 +25,6 @@ void ThermalFluidMesh::DoAssembleGlobalStifMatrix(physType const & type, FE_data
 	// compute stiffness Matrix for each element and add it to the global stiffness matrix
 	dMatrix2D<double> k(9*data.dim,9*data.dim);
 	vector<double> f(9*data.dim);
-	dMatrix2D<double> m(9*data.dim,9*data.dim);
 	data.K.setToZero();
 	data.M.setToZero();
 	for (auto &rhs : data.F)
@@ -52,39 +51,9 @@ void ThermalFluidMesh::DoAssembleGlobalStifMatrix(physType const & type, FE_data
 
 
 
-void printMatrix(string fileName, dMatrix2D<double> mat){
-	ofstream out(fileName);
-	for (int i = 0; i < mat.getnRows(); i++)
-	{
-		for (int j = 0; j < mat.getNColumns(); j++)
-		{
-			out<< mat[i][j] << " ";
-		}
-		out<<endl;
-	}
-	out.close();
-}
-
-void printVector(string fileName, vector<double> vec){
-
-	ofstream out(fileName);
-	for (int i = 0; i < vec.size(); i++)
-	{
-
-			out<< vec[i]<< endl;
-
-	}
-	out.close();
-
-}
-
-void ThermalFluidMesh::prindPVDDataset (ofstream &out, int step, string filename ){
-	out << "<DataSet timestep=\"" << step << "\"  group = \"\" part=\"0\" file= \""<< filename << "\"/>" <<endl;
-	
-
-}
 
 void ThermalFluidMesh:: printPVDfileHeading(ofstream &out){
+
 	
 	// header
 	out << "<VTKFile type=\"" << "Collection" << "\" version=\"0.1\" byte_order=\"LittleEndian\">" << endl;
@@ -94,7 +63,9 @@ void ThermalFluidMesh:: printPVDfileHeading(ofstream &out){
 
 }
 
+
 void ThermalFluidMesh:: printPVDfileFooter(ofstream & out){
+
 	
 	// footer
 	out << "  </Collection>" << endl;
@@ -102,13 +73,17 @@ void ThermalFluidMesh:: printPVDfileFooter(ofstream & out){
 	out.close();
 }
 
+
 void ThermalFluidMesh::assembleTemporalMatrices(){
+
 	vector<double> F_t;
 	spMatrix2D<double>K_t = thermalData.M * (1/params.dt ) + params.theta * thermalData.K;
 	//initialize K_reduced, depends if it is dense or sparse
 	// this is actually the one that has to be sparse
 	spMatrix2D<double> K_treduced;
+
 	reduce(K_t,K_treduced,thermalData.DOFid,thermalData.BC_U_id); // did it this way to have the definition of K and K_reduced in the same place
+
 
 	// apply boundary conditions to F_t and reduce F_t
 
@@ -167,7 +142,7 @@ void ThermalFluidMesh::assembleTemporalMatrices(){
 	// 5)solve the reduced system of equations
 	//vector<double> reduced_u = solveSystemIter(K_reduced,F_reduced);
 	//vector<double> reduced_u2 = solveSystemIterOld(K_reduced,F_reduced);
-	vector<double> reduced_u = solveSystemIterCG(K_treduced,F_reduced); //U_new
+	vector<double> reduced_u = solveSystemIterCG(K_treduced,F_reduced,thermalData.u_reduced); //U_new
 	//vector<double> reduced_u = K_reduced.solveSystemIterPCG(F_reduced);
 
 
@@ -305,6 +280,7 @@ void DoFindDisplacements( FE_data & data  ){
 	//printVector("vector.txt",F_reduced);
 
 	// 5)solve the reduced system of equations
+
 	vector<double> reduced_u = solveSystemIterCG(K_reduced,F_reduced);
 	//vector<double> reduced_u = solveSystemIterCG(data.K_reduced,F_reduced);
 	//vector<double> reduced_u = K_reduced.solveSystemIterPCG(F_reduced);
@@ -312,10 +288,11 @@ void DoFindDisplacements( FE_data & data  ){
 	//vector<double> reduced_u = K_reduced.solveSystemLUChol(F_reduced);
 	//printVector("u.txt",reduced_u);
 
+
 	// 6)add the reduced displacements to the global array of displacements.
 	for (int i = 0; i < num_displacement_DOF; i++)
 	{
-		data.U[data.DOFid[i]] = reduced_u[i];
+		data.U[data.DOFid[i]] = data.u_reduced[i];
 	}
 
 }
@@ -421,7 +398,9 @@ void ThermalFluidMesh::printVTUfile(string fileName){
 	out << "      <PointData Scalars= \"scalars\" \>" << endl;
 	if (fluidData.U.size()>0) writeVtkVectorArrayVelocity(out,"Velocity",fluidData.U,coords.size());
 	if (thermalData.U.size()>0) writeVtkVectorArrayTemp(out,"Temperature",thermalData.U);
+
 	
+
 	out << "      </PointData>" << endl;
 
 	//writeVtkCellData(out,coords.size(),45);
@@ -473,7 +452,6 @@ void readElements(ifstream & tempFile,vector<unique_ptr<FiniteElement>>&elements
 	{
 		vector<int> nodeID;
 		int node;
-		int elementType;
 		getline (tempFile,line);
 		ss<<line;
 		
@@ -558,37 +536,11 @@ void initK(dMatrix2D<double>& K, vector<unique_ptr<FiniteElement>>&elements, int
 	K =0;
 }
 
-void initK(spMatrix2D<double>& K, vector<unique_ptr<FiniteElement>>& elements, int NumNodes, int dim ){
-// TODO something for the sparse matrix case
 
-	// First resize Matrix
-	K.resize(NumNodes*dim,NumNodes);
-
-	// Loop through the elements 
-
-	for (auto const & element : elements)
-	{
-		for (auto const & a : element->getNodes())
-		{
-			int p = dim * a;
-			for (auto const & b : element->getNodes())
-			{
-				int q = dim *b;
-				for (int i = 0; i < dim; i++)
-				{
-					for (int j = 0; j < dim; j++)
-					{
-						K.addItem(p+i,q+j,0.);
-					}
-				}
-			}
-		}
-	}
-
-}
 
 void initK(spMatrix2D<double>& K, spMatrix2D<double>& M, vector<unique_ptr<FiniteElement>>& elements, int NumNodes, int dim, vector<bool> & isBC ){
 // TODO something for the sparse matrix case
+
 
 	// First resize Matrix
 	K.resize(NumNodes*dim,NumNodes);
@@ -622,6 +574,7 @@ void initGlobals(FE_data &Fe_vars, vector<unique_ptr<FiniteElement>>&elements, i
 	
 	
 
+
 	// allocate and initialize displacementes array
 	Fe_vars.U.resize(NumNodes*Fe_vars.dim);
 	double initDisplacement =0;
@@ -631,20 +584,11 @@ void initGlobals(FE_data &Fe_vars, vector<unique_ptr<FiniteElement>>&elements, i
 	for (auto & displacement : Fe_vars.U)
 	{
 		displacement =initDisplacement;
+
 	}
 
-	// add prescribed displacements to global array of displacements
-	for (int i=0; i< Fe_vars.BC_U_id.size(); i++) {Fe_vars.U[Fe_vars.BC_U_id[i]] = Fe_vars.BC_U[i];}
 
-	// allocate and initialize global force vectors
-	Fe_vars.F.resize(NumNodes*Fe_vars.dim);
-	for (auto force : Fe_vars.F)
-	{
-		force =0.0;
-	}
 
-	// initialize array with the indices to the degrees of fredom 
-	int count =0;
 
 	// for the velocity
 	vector<bool> isBCvector;
@@ -666,6 +610,7 @@ void initGlobals(FE_data &Fe_vars, vector<unique_ptr<FiniteElement>>&elements, i
 	
 	initK(Fe_vars.K,Fe_vars.M,elements,NumNodes,Fe_vars.dim,isBCvector);
 }
+
 
 
 
@@ -719,8 +664,10 @@ void ThermalFluidMesh::initializeFromFile(const string & fileName){
 	// read simulation parameters
 	getline (tempFile,line);
 	ss<<line;
+
 	ss>>params.rho; ss>>params.mu; ss>>params.lambda; ss>>params.g_y; ss>>params.nGauss;
 	ss>>params.kappa; ss>>params.theta; ss>>params.dt; ss>>params.Cp;ss>>thermalData.U_o; ss>>params.alpha;
+
 	ss=stringstream();// flush stream
 
 	// read mesh topology
@@ -734,6 +681,7 @@ void ThermalFluidMesh::initializeFromFile(const string & fileName){
 	
 	// read BC for the Temperature
 	
+
 	readBC(tempFile, thermalData);
 
 	tempFile.close();
@@ -746,7 +694,9 @@ void ThermalFluidMesh::initializeFromFile(const string & fileName){
 
 	// for the thermal variables
 	thermalData.dim=1;
+
 	initGlobals(thermalData, elements, coords.size(),THERMAL );
+
 	
 
 }

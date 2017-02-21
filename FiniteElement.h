@@ -16,8 +16,11 @@ struct FE_data{
 	spMatrix2D<double> K;	
 	spMatrix2D<double> K_reduced; // must be same type as K
 	spMatrix2D<double> M;	// mass Matrix
+	vector<double> u_reduced;
 	vector<double>F;
+
 	double U_o;				// initial displacement field	
+
 	int dim;				// num of Dimensions of variable U
 };
 
@@ -27,7 +30,7 @@ struct FE_data{
 // simulation parameters needed by the thermal fluid element
 struct SimParameters{
 	double rho;     // fluid density
-	double mu;	    // fluid viscosity
+	double mu;	    // zero shear fluid viscosity
 	double lambda;  // penalty constant
 	double g_y;     // gravity
 	int nGauss;     // number of Gauss points used in the integration
@@ -36,6 +39,8 @@ struct SimParameters{
 	double dt;		//time step
 	double theta;	// theta parameter
 	double alpha;	// viscosity temperature shift factor
+
+
 
 };
 
@@ -49,10 +54,12 @@ struct integrationPointVals{
 class FiniteElement {
 public :
 	virtual void  getElementArea(double &area, vector<Point2D> const & coords)=0;
+
 	virtual void  computeLocalStifMatrix(vector<Point2D> const & coords,vector<double> & U, vector<double>& T, dMatrix2D<double> & k, vector<double> & f, physType const & type, SimParameters & params)=0;
 	virtual void  computeLocalStifandMassMatrix(vector<Point2D> const & coords, vector<double> & U, vector<double>& T,dMatrix2D<double> & k, dMatrix2D<double> & m,  vector<double> & f, physType const & type, SimParameters & params)=0;
 	virtual void  addLocalstifToGlobal( dMatrix2D<double> & k, vector<double> const & f, FE_data & data, physType const & type)=0;
 	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data & data, physType const & type)=0;
+
 
 	void  setNodeIds(vector<int> & indices ) { 	nodes.assign(indices.begin(),indices.end());}
 	vector<int> getNodes(){return nodes;};
@@ -85,11 +92,12 @@ public:
 	virtual void  addLocalstifToGlobal( dMatrix2D<double> & k, vector<double> const & f, FE_data & data, physType const & type) override;
 	virtual void  addLocalStifandMassToGlobal( dMatrix2D<double> & k,dMatrix2D<double> & m, vector<double> const & f, FE_data & data, physType const & type) override;
 
+
 	//void computeShapeFunctions(double const & Xi, double const & eta, vector<Point2D> const & coords, dMatrix2D<double> & B, vector<double>& Ni,double & detJ);
 	
 	//static void intitializeIntegrationData();
 
-protected:
+
 	void computeFluidK(vector<Point2D> const & coords, vector<double> & U, vector<double>& T,dMatrix2D<double> & k, vector<double> & f, SimParameters & params);
 	void computeThermalK(vector<Point2D> const & coords, vector<double> & U, vector<double>& T,dMatrix2D<double> & k, vector<double> & f, SimParameters & params);
 	//void computeFluidKandM(vector<Point2D> const & coords, dMatrix2D<double> & k, dMatrix2D<double> & m,vector<double> & f, SimParameters & params);

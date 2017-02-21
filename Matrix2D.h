@@ -21,6 +21,7 @@ public:
 	virtual Matrix2D<T>&  transpose() =0 ;
 	virtual void addRow(row<T> & row)= 0;
 	~Matrix2D() {}
+	virtual void setToZero() =0;
 	
 	virtual row<T> & getRow(int i) =0;
 	vector<T>const operator*(vector<T>const & b){
@@ -238,7 +239,9 @@ public:
 			}
 		}
 	}
+
 	virtual int const getnRows()const override  { return matrixData.size();};
+
 
 	protected:
 		int nColumns;
@@ -270,10 +273,12 @@ public:
 		
 	};
 
+
 	void addItem(int const i, int const j, T const & entry, bool isBC){
 		matrixData[i].insertNextItem(entry,j, isBC);
 		
 	};
+
 
 	void setToZero(){
 		for (int i = 0; i < matrixData.size(); i++)
@@ -282,11 +287,13 @@ public:
 		}
 	};
 
+
 	virtual void addRow(row<T> & row)override{
 	};
 	void addRow(Sparserow<T> & row){
 		matrixData.push_back(row);
 	};
+
 	void removeZeros(){
 		for (int i = 0; i < nRows; i++)
 		{
@@ -351,7 +358,9 @@ public:
 		int indexCount=1;
 		for (int i = 0; i < K.matrixData.size(); i++)
 		{
+
 			if (count<BC_ID.size()&&i==BC_ID[count])
+
 			{
 				
 				count++; // get next BC_ID
@@ -381,6 +390,7 @@ public:
 	
 
 	 virtual int const getnRows()const override { return matrixData.size();};
+
 protected :
 	 vector<Sparserow<T>> matrixData;
 };
@@ -617,12 +627,12 @@ dMatrix2D<T> operator * (dMatrix2D<T> & A, T B ){
 template <typename T>
 dMatrix2D<T> operator * ( T B,dMatrix2D<T> & A ){
 	// Matrix multiplication
-	Matrix2D<T> C(A.getnRows(),A.getNColumns());
+	dMatrix2D<T> C(A.getnRows(),A.getNColumns());
 		for (int i = 0; i < A.getnRows(); i++)
 			{
-				for (int j = 0; j < B.getNColumns(); j++)
+				for (int j = 0; j < A.getNColumns(); j++)
 				{
-						C.data[i][j] = A[i][j]*B;
+						C[i][j] = A[i][j]*B;
 				}
 			}
 
@@ -769,12 +779,14 @@ template <typename T>
 
 	// Conjugate Gradient
 	template <typename T >
-vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b){
+vector<T> solveSystemIterCG(Matrix2D<T> & A, vector<T> &b, vector<T> & initGuess){
 	// uses conjugate gradient method 
+
 	T tol = 0.1;
+
 	// initialize guess
-	vector<T> x;
-	for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);
+	vector<T> x =initGuess;
+	//for (size_t  i = 0; i < b.size(); i++) 	x.push_back(0);
 
 	// vector of residuals
 	vector<T> r =b - (A*x); //r = b - A * x;
